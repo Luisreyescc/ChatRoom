@@ -1,0 +1,39 @@
+# Project information
+PROJECT_NAME           = "Client"
+PROJECT_NUMBER         = "1.0.0"  
+PROJECT_BRIEF          = "A C-based client designed for connecting to and interacting with a chatroom."
+
+# Input configuration
+OUTPUT_DIRECTORY       = ./docs
+CREATE_SUBDIRS         = YES  
+INPUT                  = ./src
+FILE_PATTERNS          = *.c *.h
+RECURSIVE              = YES
+
+# Source browser options
+SOURCE_BROWSER         = YES  
+INLINE_SOURCES         = YES  
+
+# Extraction configuration
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES  
+EXTRACT_STATIC         = YES  
+EXTRACT_LOCAL_CLASSES  = YES  
+EXTRACT_LOCAL_METHODS  = YES  
+
+# Output formats
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO   
+GENERATE_MAN           = NO  
+GENERATE_XML           = NO   
+
+# Warnings
+WARNINGS               = YES  
+WARN_IF_UNDOCUMENTED   = YES  
+WARN_IF_DOC_ERROR      = YES  
+
+# Miscellaneous
+QUIET                  = NO  
+JAVADOC_AUTOBRIEF      = NO  
+TAB_SIZE               = 4  
+OPTIMIZE_OUTPUT_FOR_C  = YES  
