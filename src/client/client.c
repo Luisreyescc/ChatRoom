@@ -37,6 +37,26 @@ Client *Client_create(char *ip, int port) {
     return client;
 }
 
-int main() {
-    return 0;
+/**
+ * Establishes a connection to the server specified in the `Client` structure.
+ *
+ * This function attempts to connect the TCP socket (created and configured in 
+ * `Client_create`) to the server using the address and port specified in the 
+ * `Client` structure. If the connection is successful, the socket is ready for 
+ * communication. If the connection fails, an error message is printed to stderr.
+ *
+ * @param client A pointer to a `Client` structure that contains the socket 
+ *               file descriptor and the server's address information.
+ * @return An integer representing the success or failure of the connection:
+ *         - 0 on success.
+ *         - -1 on failure, in which case an error message is printed and 
+ *           `errno` is set appropriately.
+ */
+int Client_connect(Client *client) {
+    int result = connect(client->socket_fd, (struct sockaddr *)&client->server_addr, sizeof(client->server_addr));
+    if (result < 0) {
+        perror("Connection failed");
+    }
+    return result;
 }
+
