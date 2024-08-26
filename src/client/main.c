@@ -10,7 +10,8 @@
  * port 8080. It then attempts to connect to the server using this client. If 
  * the client creation or connection fails, appropriate error messages are 
  * displayed, and the program exits with a failure status. If the connection 
- * is successful, a success message is printed. Finally, the program closes 
+ * is successful, a success message is printed and a new message appears in 
+ * server. Finally, the program closes 
  * the socket and frees the allocated memory before exiting.
  *
  * @return int Returns 0 on successful execution, or -1 if client creation or 
@@ -28,6 +29,8 @@ int main() {
     else 
         printf("Failed to connect to the server");
 
+    Client_send(client, "Hi from Client!");
+    
     close(client->socket_fd);
     free(client);
 

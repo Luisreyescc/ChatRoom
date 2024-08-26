@@ -60,3 +60,24 @@ int Client_connect(Client *client) {
     return result;
 }
 
+/**
+ * This function sends a message using the socket associated with the client.
+ * It uses the system's `send()` function to transmit the message.
+ *
+ * @param client A pointer to the `Client` structure containing the socket descriptor.
+ * @param message A pointer to a character string representing the message to be sent.
+ * 
+ * @return An integer value indicating the result of the operation.
+ *         - Returns the number of bytes sent on success.
+ *         - Returns -1 on error.
+ */
+int Client_send(Client *client, const char *message){
+    return send(client->socket_fd, message, strlen(message), 0);
+}
+
+
+
+
+
+
+
