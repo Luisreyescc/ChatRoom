@@ -1,6 +1,7 @@
 #include "client.h"
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 /**
@@ -76,7 +77,39 @@ int Client_send(Client *client, const char *message){
 }
 
 
+/**
+ * This function receives a message from the server using the socket associated with the client.
+ * It uses the system's `recv()` function to read the message.
+ *
+ * @param client A pointer to the `Client` structure containing the socket descriptor.
+ * @param buffer A pointer to a character array where the received message will be stored.
+ * @param size The maximum number of bytes to be received and stored in the buffer.
+ * 
+ * @return An integer value indicating the result of the operation.
+ *         - Returns the number of bytes received on success.
+ *         - Returns 0 if the connection has been closed by the server.
+ *         - Returns -1 on error.
+ */
+int Client_receive(Client *client, char *buffer, size_t size){
+    return recv(client->socket_fd, buffer, size, 0);
+}
 
+
+/**
+ * This function releases the resources associated with the client.
+ * It closes the socket and frees the memory allocated for the `Client` structure.
+ *
+ * @param client A pointer to the `Client` structure to be destroyed.
+ * 
+ * @note This function should be called when the client is no longer needed
+ *       to avoid memory leaks and ensure proper resource cleanup.
+ */
+void Client_destroy(Client *client){
+    if (client){
+        close(client->socket_fd);
+        free(client);
+    }
+}
 
 
 

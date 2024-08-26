@@ -24,7 +24,7 @@ pub fn handle_client(mut stream: TcpStream){
     
     let request = String::from_utf8_lossy(&buffer[..]);
     println!("Received request: {}", request);
-    let response = "Hello, Client!".as_bytes();
+    let response = "Hello from the Server!".as_bytes();
     stream.write(response).expect("Failed to write response!");
 }
 
