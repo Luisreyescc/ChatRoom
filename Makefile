@@ -1,27 +1,32 @@
-# Definition of the generated binaries
-CLIENT_BIN = client                  # Path for the client binary
-SERVER_BIN = src/server/target/debug/server  # Path for the server binary
+# Define the compiler and compilation flags
+CC = gcc  
+CFLAGS = -Wall -Wextra -O2 -lpthread -Ilibs/cJSON  # Compilation flags, including pthread and cJSON path
+LDFLAGS = -lm  # Linker flags, if cJSON requires math.h
+
+# Paths for the client and server binaries
+CLIENT_BIN = client
+SERVER_BIN = server
+
+# Source directories
+CLIENT_SRC_DIR = src/client
+SERVER_SRC_DIR = src/server
+CJSON_SRC = src/libs/cJSON/cJSON.c  # Path to the cJSON source file
 
 # Build both client and server
-all: client server
+all: $(CLIENT_BIN) $(SERVER_BIN)
 
 # Rule to compile the client
-client:
-	$(CC) src/client/main.c src/client/client.c -o $(CLIENT_BIN)  # Compile the client source files into the client binary
+# It compiles the client's main and client source files along with cJSON
+$(CLIENT_BIN): $(CLIENT_SRC_DIR)/main.c $(CLIENT_SRC_DIR)/client.c $(CLIENT_SRC_DIR)/client.h $(CJSON_SRC)
+	$(CC) $(CFLAGS) $(CLIENT_SRC_DIR)/main.c $(CLIENT_SRC_DIR)/client.c $(CJSON_SRC) -o $(CLIENT_BIN) $(LDFLAGS)
 
 # Rule to compile the server
-server:
-	cargo build --manifest-path src/server/Cargo.toml  # Build the server using Cargo and the specified manifest path
+# It compiles the server's main and server source files along with cJSON
+$(SERVER_BIN): $(SERVER_SRC_DIR)/main.c $(SERVER_SRC_DIR)/server.c $(SERVER_SRC_DIR)/server.h $(CJSON_SRC)
+	$(CC) $(CFLAGS) $(SERVER_SRC_DIR)/main.c $(SERVER_SRC_DIR)/server.c $(CJSON_SRC) -o $(SERVER_BIN) $(LDFLAGS)
 
 # Rule to clean the generated binaries
+# This removes both the client and server binaries
 clean:
-	rm -f $(CLIENT_BIN)  # Remove the client binary
-	cargo clean --manifest-path src/server/Cargo.toml  # Clean the server build artifacts using Cargo
+	rm -f $(CLIENT_BIN) $(SERVER_BIN)
 
-# Rule to run the client
-run-client: client
-	./$(CLIENT_BIN)  # Execute the client binary
-
-# Rule to run the server
-run-server: server
-	./$(SERVER_BIN)  # Execute the server binary

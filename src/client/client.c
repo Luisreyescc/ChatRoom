@@ -1,116 +1,94 @@
 #include "client.h"
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
+// Global variables
+volatile sig_atomic_t indicator = 0;  
+int sockfd = 0;
+char user_name[32];
+
+pthread_t send_msg_thread;
+pthread_t recv_msg_thread;
 
 /**
- * Allocates memory for a `Client`, creates a TCP socket, and sets up the 
- * server address with the provided IP and port.
+ * @brief Trims the newline character from the end of a string.
  *
- * @param ip The IP address of the server as a string.
- * @param port The port number on which the server is listening.
- * @return A pointer to the newly created `Client` instance, or NULL if an error occurred.
+ * This function modifies the input string by replacing the newline character
+ * with a null terminator if it is present.
+ *
+ * @param arr Pointer to the string to be trimmed.
+ * @param length Length of the string.
  */
-Client *Client_create(char *ip, int port) {
-    Client *client = (Client *)malloc(sizeof(Client));
-    if (!client) {
-        perror("Error allocating memory for Client");
-        return NULL;
-    }
-
-    client->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (client->socket_fd < 0) {
-        perror("Error creating socket");
-        free(client);
-        return NULL;
-    }
-
-    client->server_addr.sin_family = AF_INET;
-    client->server_addr.sin_port = htons(port);
-    if (inet_pton(AF_INET, ip, &client->server_addr.sin_addr.s_addr) <= 0) {
-        perror("Invalid address/ Address not supported");
-        close(client->socket_fd);
-        free(client);
-        return NULL;
-    }
-
-    return client;
-}
-
-/**
- * Establishes a connection to the server specified in the `Client` structure.
- *
- * This function attempts to connect the TCP socket (created and configured in 
- * `Client_create`) to the server using the address and port specified in the 
- * `Client` structure. If the connection is successful, the socket is ready for 
- * communication. If the connection fails, an error message is printed to stderr.
- *
- * @param client A pointer to a `Client` structure that contains the socket 
- *               file descriptor and the server's address information.
- * @return An integer representing the success or failure of the connection:
- *         - 0 on success.
- *         - -1 on failure, in which case an error message is printed and 
- *           `errno` is set appropriately.
- */
-int Client_connect(Client *client) {
-    int result = connect(client->socket_fd, (struct sockaddr *)&client->server_addr, sizeof(client->server_addr));
-    if (result < 0) {
-        perror("Connection failed");
-    }
-    return result;
-}
-
-/**
- * This function sends a message using the socket associated with the client.
- * It uses the system's `send()` function to transmit the message.
- *
- * @param client A pointer to the `Client` structure containing the socket descriptor.
- * @param message A pointer to a character string representing the message to be sent.
- * 
- * @return An integer value indicating the result of the operation.
- *         - Returns the number of bytes sent on success.
- *         - Returns -1 on error.
- */
-int Client_send(Client *client, const char *message){
-    return send(client->socket_fd, message, strlen(message), 0);
-}
-
-
-/**
- * This function receives a message from the server using the socket associated with the client.
- * It uses the system's `recv()` function to read the message.
- *
- * @param client A pointer to the `Client` structure containing the socket descriptor.
- * @param buffer A pointer to a character array where the received message will be stored.
- * @param size The maximum number of bytes to be received and stored in the buffer.
- * 
- * @return An integer value indicating the result of the operation.
- *         - Returns the number of bytes received on success.
- *         - Returns 0 if the connection has been closed by the server.
- *         - Returns -1 on error.
- */
-int Client_receive(Client *client, char *buffer, size_t size){
-    return recv(client->socket_fd, buffer, size, 0);
-}
-
-
-/**
- * This function releases the resources associated with the client.
- * It closes the socket and frees the memory allocated for the `Client` structure.
- *
- * @param client A pointer to the `Client` structure to be destroyed.
- * 
- * @note This function should be called when the client is no longer needed
- *       to avoid memory leaks and ensure proper resource cleanup.
- */
-void Client_destroy(Client *client){
-    if (client){
-        close(client->socket_fd);
-        free(client);
+void new_line_trim(char* arr, int length) {
+    for (int i = 0; i < length; i++) {
+        if (arr[i] == '\n') {
+            arr[i] = '\0';
+            break;
+        }
     }
 }
 
+/**
+ * @brief Thread function to handle sending messages.
+ *
+ * This function runs in a separate thread and handles sending messages from
+ * the client to the server. It reads input from stdin and sends it to the server.
+ *
+ * @return Pointer to the result (NULL).
+ */
+void* send_msg() {
+    char message[LENGTH] = {};
+    char buffer[LENGTH + 32] = {};
 
+    while (!indicator) {
+        if (fgets(message, LENGTH, stdin) == NULL) {
+            if (feof(stdin)) {
+                break;  
+            } else {
+                continue;  
+            }
+        }
 
+        new_line_trim(message, LENGTH);
+
+        if (strcmp(message, "exit") == 0) {
+            break;
+        } else {
+            sprintf(buffer, "%s 🗣️: %s\n", user_name, message);
+            if (send(sockfd, buffer, strlen(buffer), 0) == -1) {
+                perror("send error");
+                break;  
+            }
+        }
+
+        bzero(message, LENGTH);
+        bzero(buffer, LENGTH + 32);
+    }
+
+    pthread_exit(NULL);  
+}
+
+/**
+ * @brief Thread function to handle receiving messages.
+ *
+ * This function runs in a separate thread and handles receiving messages from
+ * the server and printing them to the console.
+ *
+ * @return Pointer to the result (NULL).
+ */
+void* recv_msg() {
+    char message[LENGTH] = {};
+    while (!indicator) {
+        int receive = recv(sockfd, message, LENGTH, 0);
+        if (receive > 0) {
+            printf("%s", message);
+            memset(message, 0, sizeof(message));  
+        } else if (receive == 0) {
+            printf("\nConnection closed by the server or client.\n");
+            break;  
+        } else {
+            if (indicator) break;  
+            perror("recv error");
+            break;
+        }
+    }
+    pthread_exit(NULL);  
+}
 

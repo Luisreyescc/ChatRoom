@@ -1,41 +1,71 @@
-#ifndef CLIENT_H
-#define CLIENT_H
+/**
+ * @file client.h
+ * @brief Header file for the chat client.
+ *
+ * This file contains the declarations for the chat client program,
+ * including global variables, function prototypes, and necessary includes.
+ */
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#ifndef CHAT_CLIENT_H
+#define CHAT_CLIENT_H
+
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <pthread.h>
 
-/** 
- * @brief Defines a new data type called Client.
- */
-typedef struct {
-    int socket_fd; /**< Socket file descriptor for the client connection. */
-    struct sockaddr_in server_addr; /**< Server address information. */
-} Client;
+#define LENGTH 2048 /**< Maximum length for messages */
 
-/**
- * @brief Creates and initializes a new client.
- */
-Client *Client_create(char *ip, int port);
-
-/**
- * @brief Connects the client socket to the server.
- */
-int Client_connect(Client *client);
+/** Global variables */
+extern volatile sig_atomic_t indicator; /**< Flag to indicate SIGINT signal reception */
+extern int sockfd; /**< Socket file descriptor */
+extern char user_name[32]; /**< Username */
 
 /**
- * @brief Sends a message to the server.
+ * @brief Trims the newline character from the end of a string.
+ *
+ * This function modifies the input string by replacing the newline character
+ * with a null terminator if it is present.
+ *
+ * @param arr Pointer to the string to be trimmed.
+ * @param length Length of the string.
  */
-int Client_send(Client *client, const char *message);
+void new_line_trim(char* arr, int length);
 
 /**
- * @brief Receives a message from server.
+ * @brief Thread function to handle sending messages.
+ *
+ * This function runs in a separate thread and handles sending messages from
+ * the client to the server.
+ *
+ * @return Pointer to the result (NULL).
  */
-int Client_receive(Client *client, char *buffer, size_t size);
+void soft_exit();
 
 /**
- * @brief Frees the resources allocated for the client.
+ * @brief Thread function to handle sending messages.
+ *
+ * This function runs in a separate thread and handles sending messages from
+ * the client to the server.
+ *
+ * @return Pointer to the result (NULL).
  */
-void Client_destroy(Client *client);
+void* send_msg();
 
-#endif // CLIENT_H
+/**
+ * @brief Thread function to handle receiving messages.
+ *
+ * This function runs in a separate thread and handles receiving messages
+ * from the server and printing them to the console.
+ *
+ * @return Pointer to the result (NULL).
+ */
+void* recv_msg();
+
+#endif // CHAT_CLIENT_H
