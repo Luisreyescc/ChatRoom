@@ -4,15 +4,51 @@
 #include <stdio.h>
 
 void process_client_message(client_t *client, const char *message) {
+    printf("Server received raw JSON from %s: %s\n", client->user_name[0] ? client->user_name : "(Unknown)", message);
+
     cJSON *json_msg = cJSON_Parse(message);
 
     if (json_msg != NULL) {
         cJSON *type = cJSON_GetObjectItemCaseSensitive(json_msg, "type");
 
         if (cJSON_IsString(type)) {
-            if (strcmp(type->valuestring, "PUBLIC_TEXT") == 0) {
+            if (strcmp(type->valuestring, "IDENTIFY") == 0) {
+                // Almacenar el nombre de usuario en la estructura del cliente
+                cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
+                if (cJSON_IsString(username) && username->valuestring != NULL) {
+                    strncpy(client->user_name, username->valuestring, sizeof(client->user_name) - 1);
+                    client->user_name[sizeof(client->user_name) - 1] = '\0';  // Asegurar terminación nula
+                    printf("User identified as %s\n", client->user_name);
+
+                    // Enviar mensaje de respuesta al cliente
+                    cJSON *json_response = cJSON_CreateObject();
+                    cJSON_AddStringToObject(json_response, "type", "RESPONSE");
+                    cJSON_AddStringToObject(json_response, "operation", "IDENTIFY");
+                    cJSON_AddStringToObject(json_response, "result", "SUCCESS");
+                    cJSON_AddStringToObject(json_response, "extra", client->user_name);
+                    char *response_str = cJSON_PrintUnformatted(json_response);
+
+                    if (write(client->sockfd, response_str, strlen(response_str)) < 0) {
+                        perror("ERROR: write to descriptor failed");
+                    }
+                    free(response_str);
+                    cJSON_Delete(json_response);
+
+                    // Enviar notificación a los demás clientes
+                    cJSON *json_new_user = cJSON_CreateObject();
+                    cJSON_AddStringToObject(json_new_user, "type", "NEW_USER");
+                    cJSON_AddStringToObject(json_new_user, "username", client->user_name);
+                    char *new_user_str = cJSON_PrintUnformatted(json_new_user);
+
+                    broadcast_message(new_user_str, client->id);  // Notificar a los demás clientes
+                    free(new_user_str);
+                    cJSON_Delete(json_new_user);
+                }
+
+            } else if (strcmp(type->valuestring, "PUBLIC_TEXT") == 0) {
                 cJSON *text = cJSON_GetObjectItemCaseSensitive(json_msg, "text");
                 if (cJSON_IsString(text)) {
+                    printf("Server received from %s: %s\n", client->user_name, text->valuestring);
                     send_public_message(text->valuestring, client->user_name);
                 }
 
@@ -20,6 +56,7 @@ void process_client_message(client_t *client, const char *message) {
                 cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
                 cJSON *text = cJSON_GetObjectItemCaseSensitive(json_msg, "text");
                 if (cJSON_IsString(username) && cJSON_IsString(text)) {
+                    printf("Server received private message from %s to %s: %s\n", client->user_name, username->valuestring, text->valuestring);
                     send_private_message(client, text->valuestring, client->user_name, username->valuestring);
                 }
 
@@ -40,6 +77,7 @@ void process_client_message(client_t *client, const char *message) {
 }
 
 
+
 void send_public_message(const char *text, const char *username) {
     cJSON *json_message = cJSON_CreateObject();
     cJSON_AddStringToObject(json_message, "type", "PUBLIC_TEXT_FROM");
@@ -52,7 +90,6 @@ void send_public_message(const char *text, const char *username) {
     free(json_message_str);
     cJSON_Delete(json_message);
 }
-
 
 void send_private_message(client_t *client, const char *text, const char *from_username, const char *to_username) {
     client_t *recipient = find_client_by_username(to_username);

@@ -103,6 +103,9 @@ void* recv_msg() {
         int received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
         if (received > 0) {
             buffer[received] = '\0';
+            /* Uncomment this line to see the raw json in the clients.*/
+            printf("Raw JSON received from server: %s\n", buffer);
+
             cJSON *json_msg = cJSON_Parse(buffer);
 
             if (json_msg != NULL) {
@@ -115,18 +118,21 @@ void* recv_msg() {
                         if (cJSON_IsString(username) && cJSON_IsString(text)) {
                             printf("📩 [Public] %s 🗣️: %s\n", username->valuestring, text->valuestring);
                         }
+
                     } else if (strcmp(type->valuestring, "TEXT_FROM") == 0) {
                         cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
                         cJSON *text = cJSON_GetObjectItemCaseSensitive(json_msg, "text");
                         if (cJSON_IsString(username) && cJSON_IsString(text)) {
                             printf("📩 [Private] %s 🗣️: %s\n", username->valuestring, text->valuestring);
                         }
+
                     } else if (strcmp(type->valuestring, "NEW_STATUS") == 0) {
                         cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
                         cJSON *status = cJSON_GetObjectItemCaseSensitive(json_msg, "status");
                         if (cJSON_IsString(username) && cJSON_IsString(status)) {
                             printf("🔄 %s is now %s\n", username->valuestring, status->valuestring);
                         }
+
                     } else if (strcmp(type->valuestring, "USER_LIST") == 0) {
                         cJSON *users = cJSON_GetObjectItemCaseSensitive(json_msg, "users");
                         if (cJSON_IsObject(users)) {
@@ -136,10 +142,16 @@ void* recv_msg() {
                                 printf(" - %s: %s\n", user->string, user->valuestring);
                             }
                         }
+
+                    } else if (strcmp(type->valuestring, "NEW_USER") == 0) {
+                        cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
+                        if (cJSON_IsString(username)) {
+                            printf("🎉 New user connected: %s\n", username->valuestring);  
+                        }
                     }
                 }
 
-                cJSON_Delete(json_msg);
+                cJSON_Delete(json_msg);  
             } else {
                 printf("Error parsing received message.\n");
             }
@@ -156,3 +168,4 @@ void* recv_msg() {
 
     pthread_exit(NULL);
 }
+
