@@ -1,9 +1,27 @@
+/**
+ * @file main.c
+ * @brief Main server logic for handling client connections and messaging.
+ *
+ * This file contains the main function for starting the server, accepting client connections, 
+ * and managing client communication. It also includes a client handler function to manage 
+ * individual client interactions using threads.
+ */
 #include "connection.h"
 #include "client_manager.h"
 #include "messaging.h"
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
+/**
+ * @brief Handles communication with a connected client.
+ *
+ * This function is executed in a separate thread for each connected client. It listens for messages 
+ * from the client, processes them, and handles client disconnection if necessary.
+ *
+ * @param arg Pointer to the client_t structure of the connected client.
+ * @return void* Always returns NULL when the thread exits.
+ */
 void *client_handler(void *arg) {
     client_t *client = (client_t *)arg;
     char buffer[2048];
@@ -27,6 +45,17 @@ void *client_handler(void *arg) {
     pthread_exit(NULL);
 }
 
+/**
+ * @brief Main function that starts the server and handles client connections.
+ *
+ * This function initializes the server, accepts client connections in a loop, 
+ * and spawns a new thread to handle each client's communication. The server runs 
+ * until it is manually shut down.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments (IP and port).
+ * @return int Returns EXIT_SUCCESS on successful execution or EXIT_FAILURE on error.
+ */
 int main(int argc, char **argv) {
     if (argc != 3) {
         printf("Usage: %s <ip> <port>\n", argv[0]);
@@ -46,7 +75,8 @@ int main(int argc, char **argv) {
             new_client->address = cli_addr;
             new_client->sockfd = client_socket_fd;
             new_client->id = client_socket_fd;  
-
+            strncpy(new_client->status, "ACTIVE", sizeof(new_client->status) - 1);
+            new_client->status[sizeof(new_client->status) - 1] = '\0';  // Asegura que esté null-terminated
             add_client(new_client);
 
             pthread_t tid;

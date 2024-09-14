@@ -38,3 +38,7 @@ $(SERVER_BIN): $(SERVER_SRC_FILES) $(CJSON_SRC)
 # Rule to clean the generated binaries
 clean:
 	rm -f $(CLIENT_BIN) $(SERVER_BIN)
+	rm -rf docs 
+# Rule to generate documentation with Doxygen
+docs:
+	doxygen Doxyfile

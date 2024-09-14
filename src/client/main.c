@@ -1,8 +1,28 @@
+/**
+ * @file main.c
+ * @brief Entry point for the client-side application.
+ *
+ * This program allows a client to connect to a server, send and receive messages in parallel 
+ * using threads, and disconnect gracefully when finished. It requires an IP address and port 
+ * to establish the connection.
+ */
 #include "connection.h"
 #include "messaging.h"
 #include "tui.h"
 #include <string.h>
 
+/**
+ * @brief Main function that starts the client application.
+ *
+ * The program expects two command-line arguments: the server's IP address and port number. 
+ * It prompts the user for a username, establishes a connection to the server, and then 
+ * creates two threads for sending and receiving messages. The connection is closed when 
+ * the user terminates the session.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line argument strings.
+ * @return int Returns EXIT_SUCCESS on successful execution or EXIT_FAILURE on error.
+ */
 int main(int argc, char **argv) {
     if (argc != 3) {
         printf("Usage: %s <ip> <port>\n", argv[0]);

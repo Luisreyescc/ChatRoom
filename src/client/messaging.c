@@ -1,3 +1,7 @@
+/**
+ * @file messaging.c
+ * @brief Manages the sending and receiving of messages for the client.
+ */
 #include "messaging.h"
 #include "connection.h"
 #include "../libs/cJSON/cJSON.h"
@@ -8,6 +12,15 @@
 pthread_t send_msg_thread;
 pthread_t recv_msg_thread;
 
+/**
+ * @brief Sends messages to the server.
+ *
+ * This function manages user input and sends messages in JSON format to the server,
+ * including public messages, private messages, status changes, and user list requests.
+ * It also handles the client's disconnection.
+ *
+ * @return void*
+ */
 void* send_msg() {
     char buffer[2048] = {};
     char message[2048] = {};
@@ -74,11 +87,17 @@ void* send_msg() {
                 }
 
             } else if (strcmp(message, "/exit") == 0) {
-                indicator = 1;
+                cJSON *json_disconnect = cJSON_CreateObject();
+                cJSON_AddStringToObject(json_disconnect, "type", "DISCONNECT");
+                const char *disconnect_str = cJSON_PrintUnformatted(json_disconnect);
+    
+                send(sockfd, disconnect_str, strlen(disconnect_str), 0);
+                cJSON_Delete(json_disconnect);
+    
                 close_connection();
                 break;
-
-            } else {
+            }
+            else {
                 printf("Unknown command. Try again.\n");
             }
         } else {
@@ -96,6 +115,15 @@ void* send_msg() {
     pthread_exit(NULL);
 }
 
+/**
+ * @brief Receives messages from the server.
+ *
+ * This function runs in an infinite loop to receive messages from the server. 
+ * Depending on the message type (public text, private message, status update, or disconnection),
+ * it formats and prints the received message to the terminal.
+ *
+ * @return void*
+ */
 void* recv_msg() {
     char buffer[2048] = {};
 
@@ -103,8 +131,6 @@ void* recv_msg() {
         int received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
         if (received > 0) {
             buffer[received] = '\0';
-            /* Uncomment this line to see the raw json in the clients.*/
-            printf("Raw JSON received from server: %s\n", buffer);
 
             cJSON *json_msg = cJSON_Parse(buffer);
 
@@ -147,6 +173,11 @@ void* recv_msg() {
                         cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
                         if (cJSON_IsString(username)) {
                             printf("🎉 New user connected: %s\n", username->valuestring);  
+                        }
+                    } else if (strcmp(type->valuestring, "DISCONNECTED") == 0) {
+                        cJSON *username = cJSON_GetObjectItemCaseSensitive(json_msg, "username");
+                        if (cJSON_IsString(username)) {
+                            printf("❌ User disconnected: %s\n", username->valuestring);  
                         }
                     }
                 }

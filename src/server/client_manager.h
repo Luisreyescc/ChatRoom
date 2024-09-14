@@ -1,3 +1,12 @@
+/**
+ * @file client_manager.h
+ * @brief Manages connected clients and broadcasting messages.
+ *
+ * This header file defines the data structures and functions used to manage clients 
+ * connected to the server. It includes adding and removing clients, as well as 
+ * broadcasting messages to all connected clients.
+ */
+
 #ifndef CLIENT_MANAGER_H
 #define CLIENT_MANAGER_H
 
