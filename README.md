@@ -1,6 +1,6 @@
-# Chat Application in C
+# ChatRoom Application in C
 
-Welcome to the **Chat Application in C**, a simple client-server chat application built using C with support for multiple users, private messaging, and status management. The project uses **pthread** for handling multiple client connections and **cJSON** for managing data in JSON format.
+Welcome to the **ChatRoom Application in C**, a simple client-server chat application built using C with support for multiple users, private messaging, and status management. The project uses **pthread** for handling multiple client connections and **cJSON** for managing data in JSON format.
 
 ## Features
 - Public and private messaging between users.
@@ -21,7 +21,13 @@ First, clone the repository from GitHub:
 
 ```bash
 git clone https://github.com/Luisreyescc/ChatRoom.git
-cd Chat
+cd ChatRoom
+```
+
+### Installing cJSON library
+The project depends on the cJSON library, which you need to clone before compiling the code. Run the following command to download cJSON into the correct directory:
+```
+git clone https://github.com/DaveGamble/cJSON.git src/libs/cJSON
 ```
 
 ### Building the Project
